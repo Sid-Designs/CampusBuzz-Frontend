@@ -1,83 +1,47 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { navbarItems } from "@/app/constants";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import "@/public/styles/Navbar.css";
-import { gsap, useGSAP } from "@/app/lib/gsap";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  useGSAP(() => {
+  // Handle scroll effect
+  useEffect(() => {
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 0;
-
-      gsap.to(".navBar", {
-        top: isScrolled ? "-10px" : "0px",
-        opacity: isScrolled ? 0.95 : 1,
-        duration: isScrolled ? 0.2 : 0.3,
-        ease: "power3.inOut",
-        boxShadow: isScrolled
-          ? "0 2px 8px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.08),"
-          : "0 2px 8px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)",
-      });
+      const scrolled = window.scrollY > 0;
+      setIsScrolled(scrolled);
     };
 
-    gsap.from(".navBar", {
-      top: -100,
-      opacity: 0,
-      duration: 0.8,
-      ease: "power3.out",
-    });
-
     window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Check initial scroll position
+    
     return () => window.removeEventListener("scroll", handleScroll);
-  });
+  }, []);
 
-  useGSAP(() => {
-    if (mobileMenuRef.current && isMobileMenuOpen) {
-      const links = linkRefs.current.filter(Boolean);
+  // Close mobile menu when clicking outside or on a link
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
 
-      gsap.to(mobileMenuRef.current, {
-        opacity: 1,
-        visibility: "visible",
-        y: 0,
-        duration: 0.4,
-        ease: "power3.out",
-      });
-
-      gsap.to(links, {
-        opacity: 1,
-        y: 0,
-        duration: 0.3,
-        stagger: 0.08,
-        ease: "back.out(1.7)",
-      });
-    } else if (mobileMenuRef.current && !isMobileMenuOpen) {
-      const links = linkRefs.current.filter(Boolean);
-
-      gsap.to(links, {
-        opacity: 0,
-        y: 10,
-        duration: 0.2,
-        stagger: 0.05,
-        ease: "power3.in",
-      });
-
-      gsap.to(mobileMenuRef.current, {
-        opacity: 0,
-        visibility: "hidden",
-        y: -10,
-        duration: 0.3,
-        ease: "power3.in",
-        delay: 0.1,
-      });
+    if (isMobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "hidden"; // Prevent scrolling when menu is open
     }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "auto";
+    };
   }, [isMobileMenuOpen]);
 
   const toggleMobileMenu = () => {
@@ -88,15 +52,13 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const handleLinkClick = () => {
-    closeMobileMenu();
-  };
-
   return (
-    <nav className="w-full">
-      <div className="navBar flex items-center justify-between px-4 md:px-8">
+    <nav className="w-full sticky top-0 z-50">
+      <div className={`navBar flex items-center justify-between px-4 md:px-8 ${isScrolled ? "scrolled" : ""}`}>
         <div className="text-xl font-bold text-gray-800">Campus Buzz</div>
-        <div className="desktop-menu">
+        
+        {/* Desktop Menu */}
+        <div className="hidden md:flex gap-6">
           {navbarItems.map((item, idx) => (
             <Link
               key={idx}
@@ -107,40 +69,65 @@ const Navbar = () => {
             </Link>
           ))}
         </div>
+
+        {/* Mobile Menu Button */}
         <button
-          className={`mobile-menu-button ${isMobileMenuOpen ? "open" : ""}`}
+          className="md:hidden flex flex-col w-8 h-8 justify-center items-center gap-1.5"
           onClick={toggleMobileMenu}
           aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
         >
-          <span className="hamburger-line line-top"></span>
-          <span className="hamburger-line line-middle"></span>
-          <span className="hamburger-line line-bottom"></span>
+          <span className={`w-6 h-0.5 bg-gray-800 transition-transform ${isMobileMenuOpen ? "rotate-45 translate-y-2" : ""}`} />
+          <span className={`w-6 h-0.5 bg-gray-800 transition-opacity ${isMobileMenuOpen ? "opacity-0" : ""}`} />
+          <span className={`w-6 h-0.5 bg-gray-800 transition-transform ${isMobileMenuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
         </button>
       </div>
-      <div ref={mobileMenuRef} className="mobNavbar">
-        <div className="w-full flex flex-col gap-2">
-          {navbarItems.map((item, idx) => (
-            <Link
-              key={idx}
-              href={item.href}
-              ref={(el) => (linkRefs.current[idx] = el)}
-              className={`mobLink ${
-                pathname === item.href ? "bg-gray-100 font-semibold" : ""
-              }`}
-              onClick={handleLinkClick}
+
+      {/* Mobile Menu */}
+      <div 
+        ref={mobileMenuRef}
+        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-40 md:hidden transform transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-8">
+            <div className="text-xl font-bold text-gray-800">Menu</div>
+            <button
+              onClick={closeMobileMenu}
+              className="text-gray-500 hover:text-gray-800"
+              aria-label="Close menu"
             >
-              {item.label}
-            </Link>
-          ))}
+              ✕
+            </button>
+          </div>
+          <div className="flex flex-col gap-4">
+            {navbarItems.map((item, idx) => (
+              <Link
+                key={idx}
+                href={item.href}
+                className={`py-3 px-4 rounded-lg text-lg ${
+                  pathname === item.href 
+                    ? "bg-blue-50 text-blue-600 font-semibold" 
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+                onClick={closeMobileMenu}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden"
           onClick={closeMobileMenu}
         />
       )}
     </nav>
   );
 };
+
 export default Navbar;
