@@ -10,66 +10,47 @@ export default function Footer() {
   const sectionsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    // Load GSAP
-    const script1 = document.createElement("script");
-    script1.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js";
-    script1.async = true;
+    // Load GSAP only
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js";
+    script.async = true;
 
-    const script2 = document.createElement("script");
-    script2.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js";
-    script2.async = true;
-
-    document.body.appendChild(script1);
+    document.body.appendChild(script);
     
-    script1.onload = () => {
-      document.body.appendChild(script2);
+    script.onload = () => {
+      const gsap = (window as any).gsap;
       
-      script2.onload = () => {
-        // Use type assertion to bypass TypeScript error
-        const gsap = (window as any).gsap;
-        const ScrollTrigger = (window as any).ScrollTrigger;
-        
-        if (!gsap || !ScrollTrigger) return;
-        
-        gsap.registerPlugin(ScrollTrigger);
+      if (!gsap) return;
 
-        // Animate logo block
-        if (logoRef.current) {
-          gsap.from(logoRef.current, {
-            scrollTrigger: {
-              trigger: footerRef.current,
-              start: "top 80%",
-              toggleActions: "play none none reverse"
-            },
-            opacity: 0,
-            y: 30,
-            duration: 0.8,
-            ease: "power3.out"
-          });
-        }
+      // Simple animation when component mounts
+      if (logoRef.current) {
+        gsap.fromTo(
+          logoRef.current,
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 0.2 }
+        );
+      }
 
-        // Animate sections with stagger
-        const validSections = sectionsRef.current.filter(Boolean);
-        if (validSections.length > 0) {
-          gsap.from(validSections, {
-            scrollTrigger: {
-              trigger: footerRef.current,
-              start: "top 80%",
-              toggleActions: "play none none reverse"
-            },
-            opacity: 0,
-            y: 30,
+      // Animate sections with stagger
+      const validSections = sectionsRef.current.filter(Boolean);
+      if (validSections.length > 0) {
+        gsap.fromTo(
+          validSections,
+          { opacity: 0, y: 30 },
+          { 
+            opacity: 1, 
+            y: 0, 
             stagger: 0.15,
-            duration: 0.8,
-            ease: "power3.out"
-          });
-        }
-      };
+            duration: 0.8, 
+            ease: "power3.out",
+            delay: 0.3
+          }
+        );
+      }
     };
 
     return () => {
-      if (document.body.contains(script1)) document.body.removeChild(script1);
-      if (document.body.contains(script2)) document.body.removeChild(script2);
+      if (document.body.contains(script)) document.body.removeChild(script);
     };
   }, []);
 
