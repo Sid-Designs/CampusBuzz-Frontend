@@ -25,6 +25,46 @@ interface BookmarkedNotice extends Notice {
   bookmarkedAt: string;
 }
 
+// WhatsApp sharing utility functions
+const shareToWhatsApp = (title: string, description: string) => {
+  // Truncate description if too long
+  const maxLength = 100;
+  const truncatedDesc = description.length > maxLength 
+    ? description.substring(0, maxLength) + '...' 
+    : description;
+  
+  const text = `📢 ${title}\n\n${truncatedDesc}\n\nShared from MET College Notices Portal`;
+  const encodedText = encodeURIComponent(text);
+  const whatsappUrl = `https://web.whatsapp.com/send?text=${encodedText}`;
+  
+  window.open(whatsappUrl, '_blank');
+};
+
+const shareToWhatsAppMobile = (title: string, description: string) => {
+  const maxLength = 100;
+  const truncatedDesc = description.length > maxLength 
+    ? description.substring(0, maxLength) + '...' 
+    : description;
+  
+  const text = `📢 ${title}\n\n${truncatedDesc}\n\nShared from MET College Notices Portal`;
+  const encodedText = encodeURIComponent(text);
+  const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+  
+  window.open(whatsappUrl, '_blank');
+};
+
+// Smart share function
+const shareNotice = (title: string, description: string) => {
+  // Check if user is on mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  if (isMobile) {
+    shareToWhatsAppMobile(title, description);
+  } else {
+    shareToWhatsApp(title, description);
+  }
+};
+
 const Home = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +92,7 @@ const Home = () => {
     { id: 1, name: 'All Notices', count: 0, color: '#dc2626' },
     { id: 2, name: 'General', count: 0, color: '#dc2626' },
     { id: 3, name: 'Events', count: 0, color: '#ef4444' },
-    { id: 4, name: 'Academic', count: 0, color: '#b91c1c' },
+    { id: 4, name: 'Academic', count: 0, color: '#b91c1b' },
     { id: 5, name: 'Important', count: 0, color: '#991b1b' },
     { id: 6, name: 'Exam', count: 0, color: '#7f1d1d' },
     { id: 7, name: 'Placements', count: 0, color: '#dc2626' },
@@ -498,7 +538,11 @@ const Home = () => {
                             </button>
                             <button 
                               className="p-2 hover:bg-red-50 rounded-lg transition-colors text-gray-500"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                shareNotice(displayNotice.title, displayNotice.description);
+                              }}
+                              title="Share via WhatsApp"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -659,7 +703,10 @@ const Home = () => {
                       </svg>
                       {isNoticeBookmarked(selectedNotice._id) ? 'Remove Bookmark' : 'Bookmark'}
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
+                    <button 
+                      className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                      onClick={() => shareNotice(selectedNotice.title, selectedNotice.description)}
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                       </svg>
