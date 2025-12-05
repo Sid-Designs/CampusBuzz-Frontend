@@ -2,7 +2,6 @@
 import React, { useRef } from "react";
 import "@/public/styles/Footer.css";
 import { footerItems, footerLegalItems, footerSocialItems } from "@/app/constants";
-
 export default function Footer() {
   const year = new Date().getFullYear();
   const footerRef = useRef<HTMLElement>(null);
