@@ -5,9 +5,9 @@ import { footerItems, footerLegalItems, footerSocialItems } from "@/app/constant
 
 export default function Footer() {
   const year = new Date().getFullYear();
-  const footerRef = useRef(null);
-  const logoRef = useRef(null);
-  const sectionsRef = useRef([]);
+  const footerRef = useRef<HTMLElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const sectionsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     // Load GSAP
@@ -25,8 +25,12 @@ export default function Footer() {
       document.body.appendChild(script2);
       
       script2.onload = () => {
-        const gsap = window.gsap;
-        const ScrollTrigger = window.ScrollTrigger;
+        // Use type assertion to bypass TypeScript error
+        const gsap = (window as any).gsap;
+        const ScrollTrigger = (window as any).ScrollTrigger;
+        
+        if (!gsap || !ScrollTrigger) return;
+        
         gsap.registerPlugin(ScrollTrigger);
 
         // Animate logo block
@@ -45,8 +49,9 @@ export default function Footer() {
         }
 
         // Animate sections with stagger
-        if (sectionsRef.current.length > 0) {
-          gsap.from(sectionsRef.current, {
+        const validSections = sectionsRef.current.filter(Boolean);
+        if (validSections.length > 0) {
+          gsap.from(validSections, {
             scrollTrigger: {
               trigger: footerRef.current,
               start: "top 80%",
